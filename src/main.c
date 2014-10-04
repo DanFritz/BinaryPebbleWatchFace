@@ -20,41 +20,40 @@ static void row_update(int value, int offset, char buffer[], int chars) {
   }
 }
 
-static void bcd_update(int value, int offset, char buffer[]) {
-  row_update(value/10,offset,buffer,3);
-  row_update(value%10,offset+5,buffer,4);
-}
-
-static void update_time() {
+static void update_time(struct tm *tick_time) {
   // Get a tm structure
-  time_t temp = time(NULL); 
-  struct tm *tick_time = localtime(&temp);
   int i, tmp, offset;
 
   // Create a long-lived buffer
-  static char buffer[] = " 0000\n   00\n 0000\n   00\n 0000\n  000\n 0000";
+  static char buffer[] = "0000\n"
+                         "  00\n"
+                         "0000\n"
+                         "  00\n"
+                         "0000\n"
+                         " 000\n"
+                         "0000";
 
   // Minutes
-  row_update(tick_time->tm_min/10, 31, buffer,3);
-  row_update(tick_time->tm_min%10, 36, buffer,4);
+  row_update(tick_time->tm_min/10, 25, buffer,3);
+  row_update(tick_time->tm_min%10, 29, buffer,4);
   
   // Hours
-  row_update(tick_time->tm_hour/10, 20, buffer,2);
-  row_update(tick_time->tm_hour%10, 24, buffer,4);
+  row_update(tick_time->tm_hour/10, 16, buffer,2);
+  row_update(tick_time->tm_hour%10, 19, buffer,4);
   
   // Days
-  row_update(tick_time->tm_mday/10, 8, buffer,2);
-  row_update(tick_time->tm_mday%10, 12, buffer,4);
+  row_update(tick_time->tm_mday/10, 6, buffer,2);
+  row_update(tick_time->tm_mday%10, 9, buffer,4);
 
   // Months
-  row_update(tick_time->tm_mon+1,0,buffer,4);
+  row_update(tick_time->tm_mon+1,-1,buffer,4);
   // Display this time on the TextLayer
   
   text_layer_set_text(s_time_layer, buffer);
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-  update_time();
+  update_time(tick_time);
 }
 
 static void main_window_load(Window *window) {
@@ -99,7 +98,9 @@ static void init() {
   window_stack_push(s_main_window, true);
   
   // Make sure the time is displayed from the start
-  update_time();
+  time_t temp = time(NULL); 
+  struct tm *tick_time = localtime(&temp);
+  update_time(tick_time);
   
   // Register with TickTimerService
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
